@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+// const crypto = require("crypto");
+// const bcrypt = require("bcryptjs");
 
 const userSchema = mongoose.Schema({
   name: {
@@ -13,13 +15,27 @@ const userSchema = mongoose.Schema({
     unique: true,
     validate: [validator.isEmail, "Please provide correct email id"],
   },
+  followers: Number,
+  following: Number,
+  profilePhoto: String,
+  photos: [String],
   password: {
     type: String,
     required: [true, "Every user must provide password"],
   },
+  role: {
+    type: String,
+    default: "user",
+  },
   confirmPassword: {
     type: String,
     required: [true, "Please provide confirm password"],
+    validate: {
+      validator: function (el) {
+        return el === this.password;
+      },
+      message: "Passwords are not same",
+    },
   },
   passwordChangedAt: {
     type: Date,
