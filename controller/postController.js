@@ -36,9 +36,24 @@ exports.resizeUploadPost = catchAsync(async (req, res, next) => {
 
 exports.upload = upload.single("post");
 
+const filterObj = (obj, ...allowedFields) => {
+  const newObj = {};
+  Object.keys(obj).forEach((el) => {
+    if (allowedFields.includes(el)) newObj[el] = obj[el];
+  });
+  return newObj;
+};
+
+exports.setUserIds = (req, res, next) => {
+  if (!req.body.user) req.body.user = req.user.id;
+  next();
+};
+
 exports.post = catchAsync(async (req, res, next) => {
-  console.log(req.file);
-  const post = await Post.create({ post: req.file.originalname });
+  const filterbody = filterObj(req.body, "like", "comment", "user");
+  if (req.file) filterbody.post = req.file.originalname;
+  console.log(filterbody);
+  const post = await Post.create(filterbody);
 
   if (!post) return next(new AppError("No post", 400));
 
@@ -46,6 +61,18 @@ exports.post = catchAsync(async (req, res, next) => {
     status: "sucess",
     data: {
       post,
+    },
+  });
+});
+
+exports.getAllPost = catchAsync(async (req, res, next) => {
+  const posts = await Post.find();
+
+  res.status(200).json({
+    status: "success",
+    results: posts.length,
+    data: {
+      posts,
     },
   });
 });

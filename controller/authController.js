@@ -2,6 +2,7 @@ const User = require("../model/userModel");
 const jwt = require("jsonwebtoken");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { promisify } = require("util");
 
 const tokenGen = function (id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -71,4 +72,23 @@ exports.protect = catchAsync(async (req, res, next) => {
   if (!token) {
     return next(new AppError("You are not logged in please log in first", 400));
   }
+
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  // 3) Checking user still exists
+  const freshUser = await User.findById(decoded.id);
+
+  if (!freshUser) {
+    return next(new AppError("User belonging to this token does not exists"));
+  }
+
+  // 4 Checking user changed password after getting token
+  if (freshUser.changePasswordAfter(decoded.iat)) {
+    return next(
+      new AppError("user recently changed password, please login Again")
+    );
+  }
+  req.user = freshUser;
+  res.locals.user = freshUser;
+  next();
 });

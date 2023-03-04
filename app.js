@@ -6,6 +6,7 @@ const path = require("path");
 const app = express();
 
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
 app.use(express.json());
 app.use("/api/user", userRoutes);
